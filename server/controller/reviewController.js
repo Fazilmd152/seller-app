@@ -50,9 +50,6 @@ export const editReview = catchAsyncError(async (req, res, next) => {
     const { text, rating } = req.body
     const { id: reviewId } = req.params  //Destrcturing and renaming
     const { _id: postedBy } = req.user //params and arguments
-
-    console.log(text);
-
     //checking if req body is empty 
     const isValid = await new Features().validateBody(req.body, next)
     //finding review in db
