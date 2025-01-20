@@ -19,7 +19,7 @@ function sendResponse(res, message, data) {
 export const addReview = catchAsyncError(async (req, res, next) => {
     const { review: text, rating } = req.body
     const { id: sellerId } = req.params  //Destrcturing and renaming 
-    const { _id: postedBy } = req.user //params and arguments
+    const { _id: postedBy } = req.seller //params and arguments
 
     //checking if req body is empty
     const isValid = await new Features().validateBody(req.body, next)
@@ -28,17 +28,15 @@ export const addReview = catchAsyncError(async (req, res, next) => {
     if (!seller)
         return next(new ErrorHandler("Seller not found", 400))
 
-    // checking if he already reviewed one user can comment
-    // and rate only one time for one seller
-    if (!await new Features(Review).isHasReview(seller, postedBy))
-        return next(new ErrorHandler("You have posted a review already", 400))
 
     if (isValid) {
         //inserting review in database
-        const review = await Review.create({ sellerId, postedBy, text, rating })
+        let review = await Review.create({ sellerId, postedBy, text, rating })
         if (review) {
             seller.reviews.push(review._id)
             await seller.save()
+            review=await Review.findById(review._id).populate({path:'postedBy',select:["name"]})
+           await new Features().delay1Second(0.10)
             return sendResponse(res, "Review posted succesfully", review)
         }
     }
@@ -49,7 +47,7 @@ export const addReview = catchAsyncError(async (req, res, next) => {
 export const editReview = catchAsyncError(async (req, res, next) => {
     const { text, rating } = req.body
     const { id: reviewId } = req.params  //Destrcturing and renaming
-    const { _id: postedBy } = req.user //params and arguments
+    const { _id: postedBy } = req.seller //params and arguments
     //checking if req body is empty 
     const isValid = await new Features().validateBody(req.body, next)
     //finding review in db
@@ -83,6 +81,22 @@ export const deleteReview = catchAsyncError(async (req, res, next) => {
     res.status(200).json({
         success: true,
         message: "Review deleted succesfully"
+    })
+
+})
+
+
+export const getReviewBySeller = catchAsyncError(async (req, res, next) => {
+    const { id: sellerId } = req.params
+    const review = await Review.find({ sellerId }).populate({path:'postedBy',select:["name","_id"]})
+
+    if(!review)
+        return next(new ErrorHandler("Comment not found",400))
+
+    res.status(200).json({
+        success: true,
+        count:review.length,
+        review
     })
 
 })

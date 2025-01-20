@@ -10,29 +10,29 @@ class Features {
         this.query = query
     }
 
-    async createSeller(user) {
-        let { _id } = await this.query.create({ seller: user._id, name: user.name })
-        const seller = await this.query.findById(_id)
-            .populate({
-                path: 'seller',
-                select: ["email"]
-            })
-        return seller
-    }
+    // async createSeller(user) {
+    //     let { _id } = await this.query.create({ seller: user._id, name: user.name })
+    //     const seller = await this.query.findById(_id)
+    //         .populate({
+    //             path: 'seller',
+    //             select: ["email"]
+    //         })
+    //     return seller
+    // }
 
 
-    async isSeller(user) {
-        //checking the role
-        if (user.role !== 'seller')
-            return false
-        //creating seller if it is seller account and does not exist 
-        const seller = await this.query.findOne({ seller: user._id, name: user.name })
-        if (!seller) {
-            const newSeller = await this.createSeller(user)
-            return newSeller
-        }
-        return seller
-    }
+    // async isSeller(user) {
+    //     //checking the role
+    //     if (user.role !== 'seller')
+    //         return false
+    //     //creating seller if it is seller account and does not exist 
+    //     const seller = await this.query.findOne({ seller: user._id, name: user.name })
+    //     if (!seller) {
+    //         const newSeller = await this.createSeller(user)
+    //         return newSeller
+    //     }
+    //     return seller
+    // }
 
     async validateBody(obj, next) {
         if (Object.keys(obj, next).length === 0)
@@ -51,19 +51,19 @@ class Features {
     }
 
     //checking user by his email or id 
-    async validateUser({ email, id }) {
+    async validateSeller({ email, id }) {
         //queriying db dynamically by the arguments
-        let user;
+        let seller;
         if (email)
-            user = await this.query.findOne({ email }).select("+password")
+            seller = await this.query.findOne({ email }).select("+password")
 
         if (id)
-            user = await this.query.findById(id)
+            seller = await this.query.findById(id)
 
-        if (!user)
+        if (!seller)
             return false
 
-        return user
+        return seller
     }
 
     async isHisRating(sellerId, postedBy) {
@@ -85,19 +85,46 @@ class Features {
         const sellers = await this.query.find(
             req.query.keyword ?
                 { name: { $regex: req.query.keyword, $options: "i" } } : {})
-                .populate({path:'reviews',select:["text","rating"],populate: {
+            .populate({
+                path: 'reviews', select: ["text", "rating", "sellerId"], populate: {
                     path: 'postedBy',
                     select: ["name", "createdAt"]
-                  }
-                })
-                .limit(resPerPage)
-                .skip(skip)
+                }
+            })
+            .limit(resPerPage)
+            .skip(skip)
         return sellers
     }
     async getSeller(resPerPage, req) {
 
         const sellers = await this.paginate(resPerPage, req)
         return sellers
+    }
+
+    delay1Second(sec) {
+        const milliSec = 1000 * sec
+        return new Promise((resolve) => {
+            setTimeout(resolve, milliSec);
+        });
+    }
+
+    async addMultipleUser(multipleUser,res) {
+        const sellers = []
+        if (multipleUser) {
+            multipleUser.map(async user => {  
+               let seller = await this.query.create({ name:user.name, password: user.password,email:user.email })
+               sellers.push(seller)
+               //console.log(seller);        
+            })
+            if (sellers) {
+                res.status(200).json({
+                    success: true,
+                    createdUser: sellers.length,
+                    sellers
+                })
+            }
+            return
+        }
     }
 
 }

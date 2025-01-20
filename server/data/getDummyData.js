@@ -26,7 +26,7 @@ const __dirname = path.resolve()
  */
 
 // run this code to get dummy users, a new json file will be created in this foldder
-fetch('https://dummyjson.com/users')
+fetch('https://dummyjson.com/users?limit=5&skip=35')
     .then(response => response.json())
     .then(data => {
         const dummyUsers = data.users.map(d => {

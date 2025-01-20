@@ -1,5 +1,4 @@
 import catchAsyncError from "../middlewares/catchAsyncError.js"
-import User from "../models/userModel.js"
 import Seller from "../models/sellerModel.js"
 import ErrorHandler from "../utils/ErrorHandler.js"
 import sendCookie from "../utils/sendCookie.js"
@@ -7,14 +6,19 @@ import Features from "../utils/Features.js"
 
 //signup route -- (http://localhost:7070/api/auth/signup)
 export const signUp = catchAsyncError(async (req, res, next) => {
-    const { name, email, password } = req.body
-    let user = await User.create(req.body)
 
-    //creating a seller account if not exist
-    //if account exists, it returns the seller account
-    const seller = await new Features(Seller).isSeller(user)
+    const { multipleUser } = req.body
+    if (process.env.NODE_ENV === 'development' && req.body.multipleUser) {
+        await new Features(Seller).addMultipleUser(multipleUser, res)
+    }
+
+    if (multipleUser) return
+
+    const { name, email, password } = req.body
+    let seller = await Seller.create(req.body)
+
     //sending cookies
-    sendCookie(res, 200, { user, seller, message: "account created succesfully" })
+    sendCookie(res, 200, { seller, message: "account created succesfully" })
 })
 
 
@@ -27,42 +31,42 @@ export const signIn = catchAsyncError(async (req, res, next) => {
 
     if (isValid) {
         //checking if it is valid user
-        const user = await new Features(User).validateUser({ email })
+        const seller = await new Features(Seller).validateSeller({ email })
 
-        if (!user)
+        if (!seller)
             return next(new ErrorHandler("Invalid email or password", 401))
 
         //validating password
-        if (!await user.isValidPassword(password))
+        if (!await seller.isValidPassword(password))
             return next(new ErrorHandler("Invalid email or password", 401))
 
-        //checking weather it's a seller account or not for dynamic response
-        const seller = await new Features(Seller).isSeller(user)
-        sendCookie(res, 200, { user, seller, message: "signed in succesfully" })
+        await new Features().delay1Second(0.10)
+        
+        sendCookie(res, 200, { seller, message: "signed in succesfully" })
     }
 })
 
 // update account route -- (http://localhost:7070/api/auth/update)
 export const updateAccount = catchAsyncError(async (req, res, next) => {
-    const { user } = req   //destructuring user in a req object
+    const { seller } = req   //destructuring user in a req object
     const { email, name } = req.body
 
     if (!email && !name)
         return next(new ErrorHandler("Enter details to update", 400))
 
     //Assigning a new value to the user object 
-    user.name = name ?? user.name
-    user.email = email ?? user.email
+    seller.name = name ?? seller.name
+    seller.email = email ?? seller.email
 
     //saving the object in database
-    const updatedUser = await user.save({ new: true, validateBeforeSave: true })
+    const updatedSeller = await seller.save({ new: true, validateBeforeSave: true })
 
-    if (!updatedUser) //sending error response,if updates failed
+    if (!updatedSeller) //sending error response,if updates failed
         return next(new ErrorHandler("Account update failed", 401))
 
     res.status(200).json({
         success: true,
-        updatedUser
+        updatedSeller
     })
 })
 
@@ -70,19 +74,19 @@ export const updateAccount = catchAsyncError(async (req, res, next) => {
 //change password route --  put (http://localhost:7070/api/auth/changepassword)
 export const changePassword = catchAsyncError(async (req, res, next) => {
     const { password, newPassword } = req.body
-    const user = await User.findById(req.user._id).select("+password")
+    const seller = await Seller.findById(req.seller._id).select("+password")
 
     //validating password
-    if (!await user.isValidPassword(password))
+    if (!await seller.isValidPassword(password))
         return next(new ErrorHandler("Incorrect password", 400))
 
     //udating new password
-    user.password=newPassword
-    await user.save({validateBeforeSave:true})
+    seller.password = newPassword
+    await seller.save({ validateBeforeSave: true })
 
     res.status(200).json({
-        succes:true,
-        meassage:"Password has been changed succesfully"
+        succes: true,
+        meassage: "Password has been changed succesfully"
     })
 })
 
@@ -100,9 +104,9 @@ export const signOut = catchAsyncError(async (req, res, next) => {
 })
 
 export const getMe = catchAsyncError(async (req, res, next) => {
-    const user = await User.findById(req.user.id)
+    const seller = await Seller.findById(req.seller.id)
     res.status(200).json({
         success: true,
-        user
+        seller
     })
 })

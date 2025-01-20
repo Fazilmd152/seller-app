@@ -1,0 +1,32 @@
+[
+  {
+    "name": "Harper Turner",
+    "email": "harper.turner@x.dummyjson.com",
+    "password": "harpertpass",
+    "role": "seller"
+  },
+  {
+    "name": "Mason Parker",
+    "email": "mason.parker@x.dummyjson.com",
+    "password": "masonppass",
+    "role": "seller"
+  },
+  {
+    "name": "Aria Roberts",
+    "email": "aria.roberts@x.dummyjson.com",
+    "password": "ariarpass",
+    "role": "seller"
+  },
+  {
+    "name": "Lucas Gray",
+    "email": "lucas.gray@x.dummyjson.com",
+    "password": "lucasgpass",
+    "role": "seller"
+  },
+  {
+    "name": "Ella Adams",
+    "email": "ella.adams@x.dummyjson.com",
+    "password": "ellaapass",
+    "role": "seller"
+  }
+]

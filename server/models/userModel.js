@@ -27,11 +27,11 @@ const userSchema = mongoose.Schema({
 
     role: {
         type: String,
-        required: true,
         enum: {
             values: ['seller', 'user'],
             message: "Choose seller or user"
-        }
+        },
+        default:'seller'
     }
 }, { timestamps: true })
 
@@ -71,4 +71,4 @@ userSchema.methods.isValidPassword = async function (enteredPassword) {
 
 const userModel = mongoose.model("user", userSchema)
 
-export default userModel
+//export default userModel

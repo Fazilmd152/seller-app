@@ -1,41 +1,46 @@
-import React, { ChangeEvent, useEffect, useState } from 'react';
-import Container from '@mui/material/Container';
+import React, {  useEffect } from 'react';
 import Box from '@mui/material/Box';
-import Stack from '@mui/material/Stack';
-import Navbar from './component/Header/Navbar.tsx';
-import SearchBar from './component/search/SearchBar.tsx';
-import Hero from './component/hero/Hero.tsx';
-import SellerCard from './component/seller/card/SellerCard.tsx';
-import Grid from '@mui/material/Grid2';
-import SellerSection from './component/seller/SellerSection.tsx';
-import Page from './component/pagination/Page.tsx';
-import { Navigate, Route, Routes } from 'react-router-dom';
-import HomePage from './layouts/HomePage.tsx';
-import SignInPage from './layouts/SignInPage.tsx';
+import Navbar from './components/Header/Navbar.tsx';
+import { Navigate, Route, Routes, useLocation } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast'
-import SignUpPage from './layouts/SignUpPage.tsx';
-import ReviewDialogPopUp from './component/reviews/dialog/ReviewDialogPopUp.tsx';
-import { useAppDispatch, useAppSelector } from './customHooks/reduxHooks.ts';
-import { loadUser } from './redux/actions/authActions.ts';
+import SellerListing from './pages/SellerListing.tsx';
+import SignIn from './pages/SignIn.tsx';
+import SignUp from './pages/SignUp.tsx';
+import Home from './pages/Home.tsx';
+import useAuthStore from './store/useAuthStore.ts';
+import  CircularProgress from '@mui/material/CircularProgress';
 
 function App() {
 
-  const {isAuthenticated}=useAppSelector(state=>state.authState)
-  const dispatch = useAppDispatch()
-  useEffect(() => {
-    dispatch(loadUser())
-  }, [])
+  const { loadUser,isAuthenticated,isCheckingAuth,authUser} = useAuthStore()
+  const location=useLocation()
+    useEffect(() => {
+         loadUser()
+    }, [location.pathname,loadUser])
+    useEffect(() => {
+      if(!isAuthenticated)loadUser()
+    }, [isAuthenticated,loadUser])
 
-
+    if (isCheckingAuth && !authUser)
+      return (
+        <Box display={'flex'} justifyContent={'center'} alignItems={'center'} height={'100vh'}>
+        <CircularProgress/>
+     </Box>
+      )
 
   return (
     <Box sx={{
       width: '100%',
+      display:'grid',
+      //placeContent:'center',
+     // height:'100vh',
       position: 'relative',
       backgroundRepeat: 'no-repeat',
+     // backgroundImage:'linear-gradient(90deg, rgba(2,0,36,1) 0%, rgba(187,172,83,1) 0%, rgba(71,206,212,0.6756827731092436) 100%)',
+     //backgroundImage:'radial-gradient(circle, rgba(2,0,36,1) 0%, rgba(187,172,83,1) 0%, rgba(71,206,212,0.6756827731092436) 100%)',
       backgroundImage: 'radial-gradient(ellipse 80% 50% at 50% -20%, hsl(210, 100%, 90%), transparent)',
-    }}>
-     {isAuthenticated&&<Navbar />} 
+    }}><Navbar />
+     {/* {isAuthenticated&&<Navbar />} 
 
       <Routes>
         <Route path='/' element={isAuthenticated?<HomePage/>:<Navigate to={'/signin'}/>} />
@@ -43,6 +48,14 @@ function App() {
         <Route path='/signup' element={isAuthenticated?<Navigate to={'/'}/>:<SignUpPage />} />
       </Routes>
 
+       */}
+       <Routes>
+        <Route path='/' element={isAuthenticated?<Home/>:<Navigate to={'/signin'}/>} />
+        <Route path='/:id' element={isAuthenticated?<SellerListing/>:<Navigate to={'/signin'}/>} />
+        <Route path='/signin' element={isAuthenticated?<Navigate to={'/'}/>:<SignIn/>} />
+        <Route path='/signup' element={isAuthenticated?<Navigate to={'/'}/>:<SignUp/>} />
+      </Routes>
+      
       <Toaster />
     </Box>
   );
